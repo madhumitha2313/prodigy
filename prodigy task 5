@@ -1,0 +1,97 @@
+Solution for step-by-Step Neural Style Transfer : 
+
+Step 1: Install Required Libraries
+
+pip install torch torchvision pillow matplotlib
+
+Step 2: Import Libraries
+
+import torch
+import torch.nn as nn
+import torch.optim as optim
+import torchvision.transforms as transforms
+import torchvision.models as models
+from PIL import Image
+import matplotlib.pyplot as plt
+
+Step 3: Load and Transform Images
+
+# Device configuration
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+# Image transformation
+transform = transforms.Compose([
+    transforms.Resize((512, 512)),
+    transforms.ToTensor()
+])
+
+# Load images
+def load_image(path):
+    image = Image.open(path).convert("RGB")
+    image = transform(image).unsqueeze(0)  # Add batch dimension
+    return image.to(device)
+
+content_image = load_image("path_to_content.jpg")  # e.g., your uploaded image
+style_image = load_image("path_to_style.jpg")      # e.g., a painting
+
+Step 4: Define Feature Extractor from VGG19
+
+class VGGFeatures(nn.Module):
+    def _init_(self):
+        super(VGGFeatures, self)._init_()
+        self.select = ['0', '5', '10', '19', '28']
+        self.vgg = models.vgg19(pretrained=True).features[:29]
+
+    def forward(self, x):
+        features = []
+        for name, layer in self.vgg._modules.items():
+            x = layer(x)
+            if name in self.select:
+                features.append(x)
+        return features
+
+Step 5: Compute Content and Style Loss
+
+def gram_matrix(tensor):
+    b, c, h, w = tensor.size()
+    features = tensor.view(b * c, h * w)
+    G = torch.mm(features, features.t())
+    return G.div(b * c * h * w)
+
+Step 6: Perform Style Transfer
+
+model = VGGFeatures().to(device).eval()
+target = content_image.clone().requires_grad_(True)
+
+optimizer = optim.Adam([target], lr=0.003)
+style_weight = 1e6
+content_weight = 1
+
+for step in range(300):
+    target_features = model(target)
+    content_features = model(content_image)
+    style_features = model(style_image)
+
+    content_loss = torch.mean((target_features[2] - content_features[2])**2)
+
+    style_loss = 0
+    for tf, sf in zip(target_features, style_features):
+        gm_target = gram_matrix(tf)
+        gm_style = gram_matrix(sf)
+        style_loss += torch.mean((gm_target - gm_style)**2)
+
+    total_loss = content_weight * content_loss + style_weight * style_loss
+
+    optimizer.zero_grad()
+    total_loss.backward()
+    optimizer.step()
+
+    if step % 50 == 0:
+        print(f"Step {step}, Loss: {total_loss.item():.4f}")
+        
+Step 7: Save the Output
+
+output = target.clone().detach().squeeze()
+output = output.cpu().clamp(0, 1)
+transformed_img = transforms.ToPILImage()(output)
+transformed_img.save("styled_output.jpg")
