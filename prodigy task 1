@@ -1,0 +1,62 @@
+Solution for Task-01
+
+1. Install Required Libraries
+
+pip install transformers datasets torch
+
+2. Prepare Your Dataset
+
+Assuming your uploaded file is a .txt file with one training sample per line (you can convert other formats if needed):
+
+from datasets import load_dataset
+
+dataset = load_dataset('text', data_files={'train': '/mnt/data/file-FaDZAg4CPPgNK5GwJmEbvC'})
+
+3. Tokenize the Dataset
+
+from transformers import GPT2Tokenizer
+
+tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
+tokenizer.pad_token = tokenizer.eos_token
+
+def tokenize_function(example):
+    return tokenizer(example["text"], truncation=True, padding="max_length", max_length=128)
+
+tokenized_datasets = dataset.map(tokenize_function, batched=True, remove_columns=["text"])
+
+4. Load GPT-2 Model
+
+from transformers import GPT2LMHeadModel
+
+model = GPT2LMHeadModel.from_pretrained("gpt2")
+model.resize_token_embeddings(len(tokenizer))
+
+5. Fine-Tuning the Model
+
+from transformers import Trainer, TrainingArguments
+
+training_args = TrainingArguments(
+    output_dir="./gpt2-finetuned",
+    evaluation_strategy="no",
+    per_device_train_batch_size=2,
+    num_train_epochs=3,
+    save_strategy="epoch",
+    logging_dir='./logs',
+    logging_steps=10
+)
+
+trainer = Trainer(
+    model=model,
+    args=training_args,
+    train_dataset=tokenized_datasets["train"],
+)
+
+trainer.train()
+
+6. Text Generation Example
+
+input_text = "Once upon a time"
+input_ids = tokenizer.encode(input_text, return_tensors="pt")
+
+output = model.generate(input_ids, max_length=100, num_return_sequences=1, do_sample=True)
+print(tokenizer.decode(output[0], skip_special_tokens=True))
