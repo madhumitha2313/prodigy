@@ -1,0 +1,41 @@
+ 
+Step 1: Install Required Libraries
+
+Open your terminal or notebook and install the necessary packages:
+
+pip install diffusers transformers accelerate torch pillow
+
+Step 2: Save the Image
+
+Make sure you have an image file saved in your working directory. Rename it to something like input_image.jpg. If you're using the file you uploaded (file-6Qjyhow3oTWqFwLHfT8UFy), save it as:
+
+with open("input_image.jpg", "wb") as f:
+    f.write(open("/mnt/data/file-6Qjyhow3oTWqFwLHfT8UFy", "rb").read())
+
+Step 3: Run the Code
+
+Now run the following Python script:
+
+from diffusers import StableDiffusionPix2PixPipeline
+from PIL import Image
+import torch
+
+# Load the pre-trained Pix2Pix model
+pipe = StableDiffusionPix2PixPipeline.from_pretrained(
+    "timbrooks/instruct-pix2pix",
+    torch_dtype=torch.float16
+).to("cuda" if torch.cuda.is_available() else "cpu")
+
+# Load your input image
+input_image = Image.open("input_image.jpg").convert("RGB")
+
+# Define the prompt - you can change this!
+prompt = "Make this sketch into a realistic photo"
+
+# Generate the output
+output_image = pipe(prompt=prompt, image=input_image).images[0]
+
+# Save the generated image
+output_image.save("translated_output.png")
+
+print("Image saved as translated_output.png")
