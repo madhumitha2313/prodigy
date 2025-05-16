@@ -1,0 +1,35 @@
+solution for the given task 03 :
+
+we have to use a simple Markov Chain model to generate text based on word probabilities.
+
+Code :
+
+import random
+from collections import defaultdict
+from docx import Document
+
+# Load text from Word file
+doc = Document("file.docx")  # Replace with your file path
+text = " ".join([p.text for p in doc.paragraphs if p.text.strip()])
+
+# Build Markov chain (word-level, 1-order)
+markov_chain = defaultdict(list)
+words = text.split()
+
+for i in range(len(words) - 1):
+    markov_chain[words[i]].append(words[i + 1])
+
+# Generate text
+word = random.choice(words)
+result = [word]
+for _ in range(50):  # Generate 50 words
+    next_words = markov_chain.get(word)
+    if not next_words:
+        break
+    word = random.choice(next_words)
+    result.append(word)
+
+print("Generated Text:")
+print(" ".join(result))
+
+This code builds a first-order Markov chain from the .docx file and generates random text based on it.
