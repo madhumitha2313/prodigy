@@ -1,0 +1,50 @@
+Here ia the code Using Stable Diffusion
+
+1. Install Required Libraries
+
+pip install diffusers transformers torch accelerate scipy safetensors
+
+2. Load Stable Diffusion Model
+
+from diffusers import StableDiffusionPipeline
+import torch
+
+# Load the pre-trained model (requires Hugging Face login/token)
+pipe = StableDiffusionPipeline.from_pretrained(
+    "runwayml/stable-diffusion-v1-5",
+    torch_dtype=torch.float16,
+).to("cuda" if torch.cuda.is_available() else "cpu")
+
+3. Generate an Image from a Prompt
+
+prompt = "A fantasy castle on a mountain during sunset, highly detailed, digital art"
+image = pipe(prompt).images[0]
+
+# Show or save the image
+image.show()
+# image.save("fantasy_castle.
+
+this is the solution to using image Generation with Pre-trained Models
+
+so we have to use Stable Diffusion to generate images from prompts in a .docx file:
+
+from diffusers import StableDiffusionPipeline
+import torch
+from docx import Document
+
+# Load model
+pipe = StableDiffusionPipeline.from_pretrained(
+    "runwayml/stable-diffusion-v1-5",
+    torch_dtype=torch.float16
+).to("cuda" if torch.cuda.is_available() else "cpu")
+
+# Load prompts from Word file
+doc = Document("file.docx")  # Replace with your file path
+prompts = [p.text for p in doc.paragraphs if p.text.strip()]
+
+# Generate and save images
+for i, prompt in enumerate(prompts):
+    image = pipe(prompt).images[0]
+    image.save(f"output_image_{i+1}.png")
+
+This will generate one image per prompt and save them as PNG files and this is the solution fot the given task 
